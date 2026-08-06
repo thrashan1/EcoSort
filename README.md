@@ -5,13 +5,13 @@ EcoSort is a machine learning and neural network to detect and sort waste into c
 https://www.kaggle.com/datasets/aviarvasu/dataset1?resource=download
 
 OR Use your own dataset in this format:
-EcoSort/
-└── DS1/
-    ├── TRAIN/
-    │   ├── N/              (Trash / Garbage)
-    │   ├── O/              (Organic / Compost)
-    │   └── R/              (Recyclable)
-    └── TEST/
-        ├── N/
-        ├── O/
-        └── R/
+# EcoSort/
+#└── DS1/
+#    ├── TRAIN/
+#    │   ├── N/ (Trash / Garbage)
+#    │   ├── O/ (Organic / Compost)
+#    │   └── R/ (Recyclable)
+#    └── TEST/
+#        ├── N/
+#        ├── O/
+#        └── R/
