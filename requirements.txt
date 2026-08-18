@@ -1,4 +1,5 @@
-opencv-python
-tensorflow
+opencv-python 
+tensorflow 
+flask 
+pyserial 
 numpy
-scikit-learn
