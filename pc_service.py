@@ -416,9 +416,8 @@ def commit_live_prediction(source='CAPTURE', send_to_arduino=True, frame=None, p
 
         if label == 'Manual' or conf < CONFIDENCE_THRESHOLD:
             label = 'Manual'
-            command = 'U'
-        else:
-            command = CLASS_TO_CMD.get(label, 'U')
+        # Every capture waits for an employee decision before routing.
+        command = 'U'
 
         prediction_to_save = {
             'label': label, 'confidence': conf, 'command': command,
@@ -449,14 +448,8 @@ def commit_live_prediction(source='CAPTURE', send_to_arduino=True, frame=None, p
         
         log_serial(f'{source} COMMITTED -> {label} ({conf:.1f}%) | R {float(scores.get("Recycle",0)):.1f}% | C {float(scores.get("Compost",0)):.1f}% | T {float(scores.get("Trash",0)):.1f}%')
 
-        if label == 'Manual':
-            item = add_manual_scan(frame, label, conf, sid, scores=scores, command=command, source=source)
-            log_serial(f'MANUAL QUEUE: scan #{item["id"]} saved as {item["filename"]}')
-        else:
-            if command == 'O': stats['organic'] += 1
-            elif command == 'T': stats['trash'] += 1
-            elif command == 'R': stats['recycle'] += 1
-            add_recent('Camera scan', label, conf, 'Processed', sid, scores=scores, command=command, source=source, capture_filename=capture_filename)
+        item = add_manual_scan(frame, label, conf, sid, scores=scores, command=command, source=source)
+        log_serial(f'EMPLOYEE QUEUE: scan #{item["id"]} saved as {item["filename"]}')
         
         save_stats()
         return True
