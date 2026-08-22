@@ -1,1521 +1,317 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EcoSort · Smart Waste Management Platform</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            background-color: #f4f7f9;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #2c3e50;
-        }
-        .filter-bar {
-            background: white;
-            border-radius: 16px;
-            padding: 15px 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 24px;
-        }
-        .stat-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            border-left: 6px solid #2ecc71;
-            height: 100%;
-            transition: transform 0.2s;
-        }
-        .stat-card.recycle {
-            border-left-color: #3498db;
-        }
-        .stat-card.compost {
-            border-left-color: #2ecc71;
-        }
-        .stat-card.trash {
-            border-left-color: #95a5a6;
-        }
-        .stat-card.manual {
-            border-left-color: #e74c3c;
-        }
-        .stat-card .label {
-            font-size: 14px;
-            color: #7f8c8d;
-            text-transform: uppercase;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-        }
-        .stat-card .value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #2c3e50;
-            margin: 5px 0;
-        }
-        .stat-card .sub-text {
-            font-size: 13px;
-            color: #95a5a6;
-            font-weight: 500;
-        }
-        .card-chart {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            height: 100%;
-            margin-bottom: 20px;
-        }
-        .chart-wrapper {
-            position: relative;
-            height: 220px;
-            width: 100%;
-        }
-        .table-alerts td,
-        .table-alerts th {
-            vertical-align: middle;
-        }
-        .table-alerts th {
-            color: #7f8c8d;
-            font-weight: 600;
-            font-size: 12px;
-            text-transform: uppercase;
-            border-bottom: 2px solid #ecf0f1;
-        }
-        .alert-table-wrap {
-            max-height: 250px;
-            overflow-y: auto;
-        }
-        .manual-queue-item {
-            border-left: 4px solid #e74c3c;
-            background: #fff5f5;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .layout-preview {
-            background: #f8f9fa;
-            border: 2px dashed #bdc3c7;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            min-height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .admin-only,
-        .employee-only,
-        .citizen-only {
-            display: none;
-        }
-        body.mode-admin .admin-only {
-            display: block;
-        }
-        body.mode-employee .employee-only {
-            display: block;
-        }
-        body.mode-citizen .citizen-only {
-            display: block;
-        }
-        .citizen-card {
-            background: #ffffff;
-            border-radius: 18px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            padding: 24px;
-        }
-        .citizen-progress {
-            height: 12px;
-            border-radius: 999px;
-            overflow: hidden;
-            background: #edf2f7;
-        }
-        .citizen-progress-bar {
-            height: 100%;
-            width: 0%;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #2ecc71, #20c997);
-            transition: width 0.3s ease;
-        }
-        .citizen-sample-art {
-            background: linear-gradient(135deg, #eef7ff, #f5f5f5);
-            border: 2px dashed #a9b7c6;
-            border-radius: 16px;
-            min-height: 220px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            text-align: center;
-            color: #41576b;
-            font-weight: 700;
-        }
-        .citizen-sample-art i {
-            font-size: 3rem;
-            margin-bottom: 12px;
-            opacity: 0.75;
-        }
-        .citizen-vote-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .citizen-toast {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            z-index: 9999;
-            background: rgba(17, 24, 39, 0.95);
-            color: #fff;
-            padding: 12px 18px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.18);
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.25s ease;
-        }
-        .citizen-toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .user-profile-box {
-            display: none;
-        }
-        body.mode-citizen .user-profile-box {
-            display: flex;
-        }
-        .citizen-vote-note {
-            min-height: 20px;
-            font-size: 0.8rem;
-            color: #64748b;
-        }
-        .trust-panel {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            padding: 18px 20px;
-        }
-        .trust-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.72rem;
-            font-weight: 700;
-        }
-        .trust-badge.high {
-            background: rgba(34, 197, 94, 0.12);
-            color: #166534;
-        }
-        .trust-badge.warning {
-            background: rgba(245, 158, 11, 0.14);
-            color: #92400e;
-        }
-        .trust-badge.low {
-            background: rgba(239, 68, 68, 0.12);
-            color: #991b1b;
-        }
-        .gamification-badge {
-            border: 1px solid rgba(16, 185, 129, 0.4);
-            background: rgba(16, 185, 129, 0.12);
-            color: #0b3f2d;
-            border-radius: 12px;
-            padding: 12px 14px;
-            transition: all 0.2s ease;
-            min-height: 120px;
-        }
-        .gamification-badge.locked {
-            opacity: 0.45;
-            filter: grayscale(0.9);
-            background: #f3f4f6;
-            border-color: rgba(148, 163, 184, 0.5);
-            color: #64748b;
-        }
-        .gamification-badge.unlocked {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(59, 130, 246, 0.10));
-            border-color: rgba(30, 155, 119, 0.7);
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.12);
-        }
-        .xp-progress-thin {
-            height: 8px;
-            border-radius: 999px;
-            overflow: hidden;
-            background: rgba(255,255,255,0.12);
-        }
-        .level-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: #fff;
-            border-radius: 999px;
-            padding: 8px 12px;
-            font-size: 0.82rem;
-            font-weight: 700;
-        }
-        .backend-status {
-            border-radius: 999px;
-            padding: 4px 12px;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
-        .backend-status.online {
-            background: rgba(46, 204, 113, 0.15);
-            color: #1a7a42;
-        }
-        .backend-status.offline {
-            background: rgba(231, 76, 60, 0.15);
-            color: #a93226;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoSort Hub</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+:root{
+  --ink:#24302c;--muted:#6d7772;--line:#d9dfdb;--paper:#f5f6f3;--panel:#fff;
+  --green:#28784e;--green-soft:#e7f1ea;--blue:#2e6f8f;--red:#a6453b;--amber:#9a701e;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;line-height:1.45}
+button,select,input{font:inherit}
+.appbar{background:#26312d;color:#fff;border-bottom:1px solid #17201d}
+.appbar .brand{font-size:1.05rem;font-weight:700;letter-spacing:.01em}
+.appbar .brand i{color:#7dbb91}
+.status-dot{width:8px;height:8px;background:#7bc691;border-radius:50%;display:inline-block;margin-right:7px}
+.status-offline .status-dot{background:#d47b72}
+.status{font-size:.82rem;color:#c8d1cd}
+.mode-select{width:auto;min-width:180px;background:#fff;color:var(--ink);border:1px solid #bec8c2;border-radius:5px}
+.page{padding:24px 28px 40px}
+.toolbar,.panel,.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.toolbar{padding:14px 16px;margin-bottom:18px}
+.btn{border-radius:5px}
+.btn-primary{background:var(--green);border-color:var(--green)}
+.btn-primary:hover{background:#226541;border-color:#226541}
+.section-title{font-size:1rem;font-weight:700;margin:0}
+.section-note{font-size:.85rem;color:var(--muted)}
+.stat{padding:16px 17px;height:100%;border-left:4px solid var(--green)}
+.stat.recycle{border-left-color:#3c7896}.stat.compost{border-left-color:#4d8a55}.stat.trash{border-left-color:#7f8784}.stat.manual{border-left-color:var(--red)}
+.stat .label{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.stat .value{font-size:1.9rem;font-weight:700;margin-top:2px}
+.stat .sub{font-size:.8rem;color:var(--muted)}
+.panel{padding:18px}
+.panel-head{display:flex;justify-content:space-between;gap:12px;align-items:start;margin-bottom:14px}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);border:1px dashed #c9d0cb;background:#fafbf9}
+.employee-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.photo-card{border:1px solid var(--line);background:#fff;display:flex;flex-direction:column;min-width:0}
+.photo-wrap{background:#101513;aspect-ratio:4/3;overflow:hidden}
+.photo-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-meta{padding:12px 13px 10px}
+.photo-title{font-weight:700}
+.photo-small{font-size:.78rem;color:var(--muted)}
+.photo-actions{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line)}
+.photo-actions button{border:0;border-right:1px solid var(--line);border-radius:0;padding:9px 5px;font-weight:600;font-size:.78rem;background:#fff}
+.photo-actions button:last-child{border-right:0}
+.photo-actions .recycle{color:var(--blue)}.photo-actions .compost{color:#4d8a55}.photo-actions .trash{color:#5e6864}.photo-actions .manual{color:var(--red)}
+.hide{display:none!important}
+.mix-bars{display:grid;gap:11px}
+.mix-row{display:grid;grid-template-columns:80px 1fr 56px;gap:10px;align-items:center;font-size:.83rem}
+.mix-track{height:9px;background:#edf0ed}
+.mix-fill{height:100%;background:var(--green)}
+.mix-fill.recycle{background:#3c7896}.mix-fill.compost{background:#4d8a55}.mix-fill.trash{background:#7f8784}.mix-fill.manual{background:var(--red)}
+.log-table{font-size:.82rem}.log-table th{font-size:.7rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line)}
+.citizen-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);gap:18px}
+.vote-art{min-height:330px;background:#eef1ed;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;text-align:center;padding:28px}
+.vote-art i{font-size:3.7rem;color:#7a8781;margin-bottom:14px}
+.vote-name{font-size:1.2rem;font-weight:700}
+.vote-buttons{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.level-box{background:#28322e;color:#fff;padding:18px;border-radius:7px}
+.level-no{font-size:2.1rem;font-weight:700}
+.xp-track{height:8px;background:#4c5751;overflow:hidden}.xp-fill{height:100%;background:#84bf93;width:0}
+.achievement-list{display:grid;gap:9px}
+.achievement{display:flex;gap:11px;align-items:center;border:1px solid var(--line);padding:11px;background:#fff}
+.achievement i{width:26px;color:#9aa39f}.achievement.unlocked i{color:var(--green)}
+.achievement small{display:block;color:var(--muted)}
+.receipt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.receipt-stat{border:1px solid var(--line);padding:12px;background:#fafbf9}.receipt-stat .k{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}.receipt-stat .v{font-weight:700;font-size:1.2rem}
+.modal-content{border-radius:7px;border:1px solid var(--line)}
+@media(max-width:900px){.citizen-layout{grid-template-columns:1fr}.page{padding:18px}.appbar .right{margin-top:10px}.appbar .inner{align-items:flex-start!important;flex-wrap:wrap}}
+@media(max-width:600px){.vote-buttons{grid-template-columns:1fr}.photo-actions{grid-template-columns:1fr 1fr}}
+
+.monitor-grid{display:grid;grid-template-columns:1.35fr .95fr;gap:14px}.camera-panel{min-height:100%}.camera-feed{width:100%;aspect-ratio:16/10;object-fit:cover;background:#101513;display:block;border:1px solid #202823}.telemetry-terminal{background:#151a18;color:#cfe4d4;min-height:245px;max-height:245px;overflow:auto;padding:12px;font:12px/1.5 Consolas,Monaco,monospace;border:1px solid #25302b}.telemetry-line{white-space:pre-wrap}.telemetry-line .time{color:#93a39a}.prediction-box{border:1px solid var(--line);padding:14px;background:#fafbf9}.prob-row{display:grid;grid-template-columns:82px 1fr 52px;gap:9px;align-items:center;font-size:.82rem;margin:8px 0}.prob-track{height:8px;background:#e8ece9}.prob-fill{height:100%;background:var(--green)}.health-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.health-item{border:1px solid var(--line);padding:12px;background:#fff}.health-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}.health-value{font-size:.98rem;font-weight:700;margin-top:3px}.health-sub{font-size:.76rem;color:var(--muted)}.gauge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.gauge{border:1px solid var(--line);padding:12px;background:#fff;text-align:center}.gauge-track{height:128px;width:32px;margin:10px auto 8px;background:#eef1ef;display:flex;align-items:flex-end;border:1px solid #d4dbd6}.gauge-fill{width:100%;background:var(--green);min-height:2px}.threshold-row{display:grid;grid-template-columns:1fr 70px;gap:14px;align-items:center}.threshold-big{font-size:1.6rem;font-weight:700;text-align:right}.impact-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.impact-box{border:1px solid var(--line);padding:14px;background:#fff}.impact-k{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}.impact-v{font-size:1.45rem;font-weight:700}.impact-note{font-size:.74rem;color:var(--muted)}.topbar-actions{display:flex;align-items:center;gap:8px}.simulation-switch{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;color:#d2dbd6}.simulation-switch input{accent-color:#7dbb91}.architecture{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:center}.arch-box{border:1px solid var(--line);padding:15px 10px;text-align:center;background:#fafbf9}.arch-arrow{text-align:center;color:#7a8781}.serial-note{font-size:.73rem;color:var(--muted)}
+@media(max-width:1100px){.monitor-grid{grid-template-columns:1fr}.health-grid{grid-template-columns:repeat(2,1fr)}.gauge-grid,.impact-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.health-grid,.gauge-grid,.impact-grid{grid-template-columns:1fr}.architecture{grid-template-columns:1fr}.arch-arrow{display:none}.threshold-row{grid-template-columns:1fr}}
+
+</style>
 </head>
 <body class="mode-admin">
+<header class="appbar">
+  <div class="container-fluid px-3 px-lg-4 py-3 d-flex justify-content-between align-items-center inner">
+    <div class="brand"><i class="fa-solid fa-recycle me-2"></i>EcoSort Hub</div>
+    <div class="d-flex align-items-center gap-3 right">
+      <div class="status" id="backendStatus"><span class="status-dot"></span><span id="backendStatusText">Backend online</span></div>
+      <select id="modeSelect" class="mode-select form-select form-select-sm" onchange="switchMode()">
+        <option value="admin">Admin</option>
+        <option value="employee">Employee sorting</option>
+        <option value="citizen">Community voting</option>
+      </select>
+      <button id="receiptButton" class="btn btn-sm btn-light hide" data-bs-toggle="modal" data-bs-target="#receiptModal" onclick="generateReceipt()">
+        <i class="fa-solid fa-receipt me-1"></i>Receipt
+      </button>
+    </div>
+  </div>
+</header>
 
-    <!-- NAVBAR -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-        <div class="container-fluid px-4">
-            <a class="navbar-brand fw-bold" href="#">
-                <i class="fas fa-leaf text-success me-2"></i> EcoSort Hub
-            </a>
-            <div class="d-flex align-items-center text-white">
-                <!-- Backend Status -->
-                <span id="backendStatus" class="backend-status online me-3">
-                    <i class="fas fa-server me-1"></i> Backend Online
-                </span>
+<main class="page">
+  <section class="toolbar">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div>
+        <div class="section-title">EcoSort dashboard</div>
+        <div class="section-note" id="modeDescription">Operations view. Counts come from the local Flask service.</div>
+      </div>
+      <div class="topbar-actions">
+        <label class="simulation-switch" title="Simulate conveyor scans when hardware is unavailable"><input id="demoToggle" type="checkbox" onchange="toggleDemo()"> Demo / Simulation</label> <button class="btn btn-sm btn-outline-success ms-2" type="button" onclick="dashboardCapture()">Commit Live Result</button><span id="captureStatus" class="small text-muted">Capture idle</span>
+        <button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#architectureModal" title="Project architecture"><i class="fa-solid fa-circle-info"></i></button>
+        <button class="btn btn-sm btn-primary" onclick="fetchAll()"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="resetBackend()"><i class="fa-solid fa-arrow-rotate-left me-1"></i>Reset counts</button>
+      </div>
+    </div>
+  </section>
 
-                <select class="form-select form-select-sm bg-secondary text-white border-secondary me-3" id="modeSelect" onchange="switchMode()">
-                    <option value="admin">👨‍💻 Admin Mode (Full Stats)</option>
-                    <option value="employee">👷‍♂️ Employee Mode (Manual Sort)</option>
-                    <option value="citizen">🙋‍♂️ Citizen Mode (Community AI Trainer)</option>
-                </select>
-
-                <div class="user-profile-box flex-column align-items-end me-3">
-                    <div class="level-pill" id="userProfileBadge">🏆 Lvl 1 Waste Rookie | 0 XP</div>
-                    <div class="w-100 mt-2" style="min-width: 220px; max-width: 240px;">
-                        <div class="xp-progress-thin progress">
-                            <div class="progress-bar bg-success" id="xpProgressBar" role="progressbar" style="width: 0%"></div>
-                        </div>
-                        <small class="d-block text-white-50 mt-1 text-end" id="xpProgressText">0/100 XP to Lvl 2</small>
-                    </div>
-                </div>
-                <i class="fas fa-user-circle me-2 fs-5 text-white-50"></i>
-                <span class="text-white-50" id="userNameDisplay">Operations · Admin</span>
-            </div>
+  <section class="employee-only hide">
+    <div class="panel mb-3">
+      <div class="panel-head">
+        <div>
+          <h2 class="section-title">Manual sorting queue</h2>
+          <div class="section-note">Every scan sent to the manual bin appears here with its captured photo.</div>
         </div>
-    </nav>
+        <div class="small text-muted" id="manualQueueCount">0 waiting</div>
+      </div>
+      <div id="employeeQueue" class="employee-grid"></div>
+      <div id="employeeEmpty" class="empty"><i class="fa-regular fa-image fa-2x mb-3"></i><div>No manual items waiting.</div></div>
+    </div>
+  </section>
 
-    <div class="container-fluid px-4 py-4">
-
-        <!-- CONTROLS & TEST BUTTONS -->
-        <div class="filter-bar row align-items-center g-3">
-            <div class="col-lg-4">
-                <div class="input-group">
-                    <button class="btn btn-success fw-semibold" id="btnRefresh" onclick="fetchStats()"><i class="fas fa-sync me-1"></i> Refresh Stats</button>
-                    <button class="btn btn-outline-danger fw-semibold" onclick="resetBackendStats()"><i class="fas fa-trash me-1"></i> Reset Backend</button>
-                </div>
-                <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle"></i> Data fetched from local Flask API (port 5000)</small>
-            </div>
-
-            <div class="col-lg-3 admin-only">
-                <label for="thresholdRange" class="form-label mb-0 fw-bold fs-7 text-muted">AI Review Threshold: <span id="thresholdVal" class="text-primary">75%</span></label>
-                <input type="range" class="form-range" min="50" max="95" step="5" id="thresholdRange" value="75" oninput="updateThreshold(this.value)">
-            </div>
-
-            <div class="col-lg-5 text-lg-end">
-                <div class="btn-group shadow-sm me-2">
-                    <button class="btn btn-outline-primary btn-sm fw-semibold" onclick="loadDummyData('recycle')">+ Recycle</button>
-                    <button class="btn btn-outline-success btn-sm fw-semibold" onclick="loadDummyData('compost')">+ Compost</button>
-                    <button class="btn btn-outline-secondary btn-sm fw-semibold" onclick="loadDummyData('trash')">+ Trash</button>
-                    <button class="btn btn-outline-danger btn-sm fw-semibold" onclick="loadDummyData('manual')">⚠️ Hazard</button>
-                </div>
-                <button class="btn btn-danger btn-sm shadow-sm fw-semibold" onclick="resetDemoStats()"><i class="fas fa-rotate-right"></i> Reset UI</button>
-            </div>
+  <section class="citizen-only hide">
+    <div class="citizen-layout">
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2 class="section-title">Vote on the next item</h2><div class="section-note">Pick the bin you think the item belongs in.</div></div>
+          <div class="small text-muted" id="voteCount">0 votes today</div>
         </div>
-
-        <!-- EMPLOYEE VIEW: MANUAL SORTING QUEUE -->
-        <div class="row g-4 employee-only">
-            <div class="col-12">
-                <div class="card-chart border-top border-danger border-4">
-                    <h5 class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> Action Required: Manual Sorting Queue</h5>
-                    <p class="text-muted small">Items below fell under the system confidence threshold or were flagged as extreme hazards. Please review.</p>
-                    <div id="manualQueueContainer">
-                        <div class="text-center text-muted py-5" id="emptyQueueMsg">
-                            <i class="fas fa-check-circle fs-1 text-success mb-3 opacity-50"></i>
-                            <h5>Queue is clear!</h5>
-                            <p>No hazardous or low-confidence items currently waiting.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="vote-art" id="voteArt">
+          <div>
+            <i id="voteIcon" class="fa-solid fa-box-open d-block"></i>
+            <div class="vote-name" id="voteItemName">Loading item</div>
+            <div class="section-note mt-1" id="voteItemNote"></div>
+          </div>
         </div>
-
-        <!-- CITIZEN COMMUNITY TRAINER -->
-        <div class="row g-4 citizen-only mb-4">
-            <div class="col-12">
-                <div class="citizen-card border border-success border-2">
-                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
-                        <div>
-                            <h4 class="mb-1 fw-bold text-dark"><i class="fas fa-users-cog me-2 text-success"></i>Help Train EcoSort AI</h4>
-                            <p class="text-muted mb-0">Help us classify tricky edge cases (e.g., crushed containers, unidentified electronic waste). Submissions are rate-limited to maintain dataset integrity.</p>
-                        </div>
-                        <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2">
-                            <i class="fas fa-shield-check me-1"></i> Quality Verification Active
-                        </span>
-                    </div>
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <small class="fw-semibold text-muted">Daily Contribution Meter</small>
-                            <strong class="text-dark" id="citizenProgressText">0 / 10 daily contributions completed</strong>
-                        </div>
-                        <div class="citizen-progress">
-                            <div class="citizen-progress-bar" id="citizenProgressBar" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"></div>
-                        </div>
-                    </div>
-                    <div class="row g-4 align-items-center">
-                        <div class="col-lg-6">
-                            <div class="citizen-sample-art" id="citizenSampleArt">
-                                <i class="fas fa-question-circle"></i>
-                                <span id="citizenImageLabel">Loading edge case...</span>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="bg-light rounded-4 p-4 border h-100">
-                                <div class="small text-muted text-uppercase fw-bold mb-2">Current AI Guess</div>
-                                <h5 class="fw-bold text-dark mb-3" id="citizenAIGuess">AI Guess: --</h5>
-                                <div class="small text-muted mb-4" id="citizenImageMeta">Ambiguous waste item from the field review queue.</div>
-                                <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-outline-primary citizen-vote-btn" onclick="submitCitizenVote('recycle')">♻️ Recyclable</button>
-                                    <button type="button" class="btn btn-outline-success citizen-vote-btn" onclick="submitCitizenVote('compost')">🌱 Compost</button>
-                                    <button type="button" class="btn btn-outline-secondary citizen-vote-btn" onclick="submitCitizenVote('trash')">🗑️ Trash</button>
-                                    <button type="button" class="btn btn-outline-danger citizen-vote-btn" onclick="submitCitizenVote('manual')">⚠️ Hazard / E-Waste</button>
-                                    <button type="button" class="btn btn-outline-warning citizen-vote-btn" onclick="submitCitizenVote('skip')">❓ Skip / Unsure</button>
-                                </div>
-                                <div class="citizen-vote-note mt-3" id="citizenVoteDelayText">Review the item before voting.</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+          <span class="section-note" id="voteHint">Choose a category.</span>
+          <span class="section-note">10 votes/day</span>
         </div>
-
-        <!-- TRUST PANEL -->
-        <div class="row g-4 mb-4 admin-only employee-only trust-panel">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
-                    <h6 class="mb-0"><i class="fas fa-shield-heart me-2 text-info"></i>Users & Votes · Trust System</h6>
-                    <span class="badge bg-info bg-opacity-10 text-info border border-info">Live voting quality</span>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Votes</th>
-                                <th>Incorrect</th>
-                                <th>Accuracy</th>
-                                <th>Trust</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="trustUserTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="vote-buttons">
+          <button class="btn btn-outline-primary" onclick="castVote('recycle')">Recycle</button>
+          <button class="btn btn-outline-success" onclick="castVote('compost')">Compost</button>
+          <button class="btn btn-outline-secondary" onclick="castVote('trash')">Trash</button>
+          <button class="btn btn-outline-danger" onclick="castVote('manual')">Special handling</button>
         </div>
+      </div>
 
-        <!-- CITIZEN GAMIFICATION -->
-        <div class="row g-4 mb-4 citizen-only">
-            <div class="col-12">
-                <div class="card-chart">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
-                        <h6 class="mb-0"><i class="fas fa-trophy me-2 text-warning"></i>Gamification & Eco-Leveling Hub</h6>
-                        <button class="btn btn-primary btn-sm fw-semibold" type="button" onclick="generateImpactReceipt()" data-bs-toggle="modal" data-bs-target="#impactReceiptModal">
-                            <i class="fas fa-mobile-alt me-1"></i> Generate Impact Receipt
-                        </button>
-                    </div>
-                    <div class="row g-4 align-items-stretch">
-                        <div class="col-lg-4">
-                            <div class="bg-dark text-white p-4 rounded-4 h-100">
-                                <div class="small text-uppercase text-white-50 mb-2">Current Level</div>
-                                <h4 class="fw-bold mb-3" id="userLevelTitle">Level 1: Waste Rookie</h4>
-                                <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
-                                    <span class="badge bg-success bg-opacity-25 text-success px-3 py-2" id="userXPBadge">0 XP</span>
-                                    <span class="badge bg-warning text-dark px-3 py-2" id="streakBadge">🔥 0 Consecutive Correct Sorts</span>
-                                </div>
-                                <div class="small text-white-50 mb-2">XP progress toward next level</div>
-                                <div class="progress xp-progress-thin" style="background: rgba(255,255,255,0.10);">
-                                    <div id="levelProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
-                                </div>
-                                <div class="mt-2 small text-white-50" id="xpToNextLevelText">0/100 XP to Lvl 2</div>
-                            </div>
-                        </div>
-                        <div class="col-lg-8">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <div class="gamification-badge" id="badge-compost">
-                                        <div class="fs-2 mb-2">🌱</div>
-                                        <div class="fw-bold">Compost Champion</div>
-                                        <small class="d-block mt-1">Divert 5 compost items.</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="gamification-badge" id="badge-hazard">
-                                        <div class="fs-2 mb-2">🔋</div>
-                                        <div class="fw-bold">Hazard Hunter</div>
-                                        <small class="d-block mt-1">Identify or flag 2 battery/e-waste items.</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="gamification-badge" id="badge-streak">
-                                        <div class="fs-2 mb-2">⚡</div>
-                                        <div class="fw-bold">Streak Master</div>
-                                        <small class="d-block mt-1">Reach a 5-item correct sorting streak.</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="gamification-badge" id="badge-legend">
-                                        <div class="fs-2 mb-2">🌍</div>
-                                        <div class="fw-bold">Zero-Waste Legend</div>
-                                        <small class="d-block mt-1">Reach 500 total XP.</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div class="d-grid gap-3">
+        <div class="level-box">
+          <div class="small text-uppercase text-white-50">Level</div>
+          <div class="level-no" id="levelTitle">1</div>
+          <div class="fw-semibold" id="levelName">Waste Rookie</div>
+          <div class="d-flex justify-content-between small text-white-50 mt-3"><span id="xpText">0 XP</span><span id="xpGoal">0 / 100</span></div>
+          <div class="xp-track mt-2"><div class="xp-fill" id="xpFill"></div></div>
         </div>
-
-        <!-- ADMIN VIEW: STATS & ANALYTICS -->
-        <div class="admin-only">
-            <!-- ENVIRONMENTAL IMPACT -->
-            <div class="row g-4 mb-4">
-                <div class="col-md-4">
-                    <div class="card-chart bg-primary bg-opacity-10 border border-primary">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6 class="text-primary fw-bold">Est. CO2 Emissions Saved</h6>
-                                <h3 class="mb-0 text-dark fw-bold" id="co2Saved">0.00 <span class="fs-6 text-muted">kg</span></h3>
-                            </div>
-                            <i class="fas fa-cloud-sun fs-1 text-primary opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card-chart bg-success bg-opacity-10 border border-success">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6 class="text-success fw-bold">Methane Prevention</h6>
-                                <h3 class="mb-0 text-dark fw-bold" id="methaneSaved">0.00 <span class="fs-6 text-muted">kg</span></h3>
-                            </div>
-                            <i class="fas fa-seedling fs-1 text-success opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card-chart bg-warning bg-opacity-10 border border-warning">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h6 class="text-warning text-dark fw-bold">Landfill Diversion Savings</h6>
-                                <h3 class="mb-0 text-dark fw-bold" id="costSaved">$0.00 <span class="fs-6 text-muted">USD</span></h3>
-                            </div>
-                            <i class="fas fa-piggy-bank fs-1 text-warning opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- STAT CARDS -->
-            <div class="row g-4 mb-4">
-                <div class="col-xl-3 col-lg-6">
-                    <div class="stat-card recycle">
-                        <div class="label">RECYCLABLE <i class="fas fa-bottle-water text-primary"></i></div>
-                        <div class="value" id="cntRecycle">0</div>
-                        <div class="sub-text" id="pctRecycle">0% of total</div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-lg-6">
-                    <div class="stat-card compost">
-                        <div class="label">COMPOST <i class="fas fa-apple-whole text-success"></i></div>
-                        <div class="value" id="cntCompost">0</div>
-                        <div class="sub-text" id="pctCompost">0% of total</div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-lg-6">
-                    <div class="stat-card trash">
-                        <div class="label">GARBAGE / TRASH <i class="fas fa-trash text-secondary"></i></div>
-                        <div class="value" id="cntTrash">0</div>
-                        <div class="sub-text" id="pctTrash">0% of total</div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-lg-6">
-                    <div class="stat-card manual">
-                        <div class="label text-danger">HAZARD / UNCERTAIN <i class="fas fa-fire text-danger"></i></div>
-                        <div class="value" id="cntManual">0</div>
-                        <div class="sub-text" id="pctManual">0% of total</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CHARTS & HARDWARE STREAM STATUS -->
-            <div class="row g-4 mb-4">
-                <div class="col-lg-3">
-                    <div class="card-chart">
-                        <h6><i class="fas fa-chart-pie me-2 text-primary"></i>Waste Mix</h6>
-                        <div class="chart-wrapper">
-                            <canvas id="streamChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3">
-                    <div class="card-chart">
-                        <h6><i class="fas fa-bullseye me-2 text-success"></i>AI Accuracy Overall</h6>
-                        <div class="chart-wrapper">
-                            <canvas id="totalAccuracyChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="card-chart">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                            <h6 class="mb-0"><i class="fas fa-chart-line me-2 text-info"></i>AI Confidence Over Time</h6>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button class="btn btn-outline-primary btn-sm active" data-range="all" onclick="setAccuracyRange('all')">All</button>
-                                    <button class="btn btn-outline-primary btn-sm" data-range="365d" onclick="setAccuracyRange('365d')">365d</button>
-                                    <button class="btn btn-outline-primary btn-sm" data-range="90d" onclick="setAccuracyRange('90d')">90d</button>
-                                    <button class="btn btn-outline-primary btn-sm" data-range="30d" onclick="setAccuracyRange('30d')">30d</button>
-                                    <button class="btn btn-outline-primary btn-sm" data-range="7d" onclick="setAccuracyRange('7d')">7d</button>
-                                    <button class="btn btn-outline-primary btn-sm" data-range="24h" onclick="setAccuracyRange('24h')">24h</button>
-                                </div>
-                                <button class="btn btn-success btn-sm shadow-sm fw-semibold" onclick="loadFullDemoStats()"><i class="fas fa-chart-column me-1"></i> Full Demo Stats</button>
-                            </div>
-                        </div>
-                        <div class="chart-wrapper">
-                            <canvas id="accuracyChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TELEMETRY LOG TABLE -->
-            <div class="row g-4">
-                <div class="col-12">
-                    <div class="card-chart">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="mb-0"><i class="fas fa-list-check me-2 text-dark"></i>Raw Telemetry Log</h6>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="exportLogsToCSV()"><i class="fas fa-file-csv me-1"></i> Export Log (.CSV)</button>
-                        </div>
-                        <div class="alert-table-wrap">
-                            <table class="table table-hover table-alerts">
-                                <thead>
-                                    <tr>
-                                        <th>TIME</th>
-                                        <th>ITEM</th>
-                                        <th>BIN</th>
-                                        <th>CONFIDENCE</th>
-                                        <th>STATUS</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="logTableBody">
-                                    <tr><td colspan="5" class="text-center text-muted py-4">No data yet. Connect to backend or click test buttons.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="panel">
+          <div class="panel-head mb-2"><h2 class="section-title">Achievements</h2><span class="small text-muted">4 total</span></div>
+          <div class="achievement-list">
+            <div class="achievement" id="achievementVotes"><i class="fa-solid fa-check"></i><div><strong>First 5 votes</strong><small>Cast five community votes.</small></div></div>
+            <div class="achievement" id="achievementCorrect"><i class="fa-solid fa-bullseye"></i><div><strong>Good sorter</strong><small>Get 10 votes right.</small></div></div>
+            <div class="achievement" id="achievementLevel"><i class="fa-solid fa-arrow-up"></i><div><strong>Level 3</strong><small>Reach level 3.</small></div></div>
+            <div class="achievement" id="achievementWaste"><i class="fa-solid fa-weight-hanging"></i><div><strong>10 kg sorted</strong><small>Reach 10 kg of system waste processed.</small></div></div>
+          </div>
         </div>
+      </div>
+    </div>
+  </section>
 
+  <section class="admin-only mb-3">
+    <div class="health-grid mb-3">
+      <div class="health-item"><div class="health-label">Serial connection</div><div class="health-value" id="serialHealth">Optional</div><div class="health-sub" id="serialSub">Arduino may be disconnected for demo</div></div>
+      <div class="health-item"><div class="health-label">Camera</div><div class="health-value" id="cameraHealth">Offline</div><div class="health-sub" id="cameraSub">0 FPS</div></div>
+      <div class="health-item"><div class="health-label">System latency</div><div class="health-value" id="latencyHealth">-- ms</div><div class="health-sub" id="latencySub">API round trip</div></div>
+      <div class="health-item"><div class="health-label">Model</div><div class="health-value">eco_sort_model.keras</div><div class="health-sub" id="inferenceHealth">Inference -- ms</div></div>
+    </div>
+    <div class="monitor-grid mb-3">
+      <div class="panel camera-panel">
+        <div class="panel-head"><div><h2 class="section-title">Live camera feed</h2><div class="section-note">MJPEG stream from the same webcam used by the classifier.</div></div><span class="badge text-bg-success">LIVE</span></div>
+        <img id="cameraFeed" class="camera-feed" src="http://127.0.0.1:5000/api/mjpeg" alt="Live EcoSort camera feed">
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2 class="section-title">Current inference</h2><div class="section-note">Top class probabilities and model timing.</div></div></div>
+        <div class="prediction-box mb-3"><div class="d-flex justify-content-between"><span>Prediction</span><strong id="predictionLabel">--</strong></div><div class="small text-muted mt-1">Command <strong id="predictionCommand">U</strong> · Threshold <strong id="thresholdText">70%</strong></div></div>
+        <div id="probabilityList"></div>
+        <div class="row g-2 mt-2"><div class="col-6"><div class="impact-box"><div class="impact-k">Confidence</div><div class="impact-v" id="confidenceText">--%</div></div></div><div class="col-6"><div class="impact-box"><div class="impact-k">Inference time</div><div class="impact-v" id="inferenceText">-- ms</div></div></div></div>
+        <div class="mt-3"><div class="threshold-row"><div><div class="section-title mb-1">Auto-sort threshold</div><input id="thresholdSlider" type="range" min="30" max="95" step="1" value="70" class="form-range" oninput="setThresholdFromUI(this.value)"></div><div class="threshold-big" id="thresholdBig">70%</div></div><div class="d-flex justify-content-between serial-note"><span>30%</span><span>95%</span></div></div>
+      </div>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-lg-7"><div class="panel"><div class="panel-head"><div><h2 class="section-title">Live serial telemetry</h2><div class="section-note">Raw Arduino messages and the last command sent to the sorter.</div></div><span class="small text-muted" id="servoState">Idle</span></div><div id="telemetryTerminal" class="telemetry-terminal"></div><div class="serial-note mt-2">Standalone CV window: press <strong>SPACE</strong> or <strong>C</strong> to run a real camera test without Arduino. Press <strong>D</strong> to toggle simulation.</div></div></div>
+      <div class="col-lg-5"><div class="panel"><div class="panel-head"><div><h2 class="section-title">Bin fill levels</h2><div class="section-note">Optional bin sensor input. Current Arduino protocol sends IR detection + receives the sorting result, so fill stays N/A unless external sensor data is supplied.</div></div></div><div class="gauge-grid">
+        <div class="gauge"><strong>Organic</strong><div class="gauge-track"><div id="gaugeOrganic" class="gauge-fill" style="height:0"></div></div><div id="fillOrganic">--%</div></div>
+        <div class="gauge"><strong>Recycle</strong><div class="gauge-track"><div id="gaugeRecycle" class="gauge-fill" style="height:0"></div></div><div id="fillRecycle">--%</div></div>
+        <div class="gauge"><strong>Trash</strong><div class="gauge-track"><div id="gaugeTrash" class="gauge-fill" style="height:0"></div></div><div id="fillTrash">--%</div></div>
+        <div class="gauge"><strong>Manual</strong><div class="gauge-track"><div id="gaugeManual" class="gauge-fill" style="height:0"></div></div><div id="fillManual">--%</div></div>
+      </div></div></div>
+    </div>
+  </section>
+
+  <section class="admin-only">
+    <div class="row g-3 mb-3">
+      <div class="col-xl-3 col-md-6"><div class="stat recycle"><div class="label">Recyclable</div><div class="value" id="cntRecycle">0</div><div class="sub" id="pctRecycle">0% of all scans</div></div></div>
+      <div class="col-xl-3 col-md-6"><div class="stat compost"><div class="label">Compost</div><div class="value" id="cntCompost">0</div><div class="sub" id="pctCompost">0% of all scans</div></div></div>
+      <div class="col-xl-3 col-md-6"><div class="stat trash"><div class="label">Trash</div><div class="value" id="cntTrash">0</div><div class="sub" id="pctTrash">0% of all scans</div></div></div>
+      <div class="col-xl-3 col-md-6"><div class="stat manual"><div class="label">Awaiting manual sort</div><div class="value" id="cntManual">0</div><div class="sub" id="pctManual">0% of all scans</div></div></div>
     </div>
 
-    <!-- IMPACT RECEIPT MODAL -->
-    <div class="modal fade" id="impactReceiptModal" tabindex="-1" aria-labelledby="impactReceiptLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header border-0 bg-dark text-white">
-                    <h5 class="modal-title fw-bold" id="impactReceiptLabel">EcoSort Impact Receipt</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-                        <div>
-                            <div class="text-uppercase small text-muted mb-1">User Level & Title</div>
-                            <h4 class="fw-bold mb-0" id="receiptUserLevel">Level 1: Waste Rookie</h4>
-                        </div>
-                        <img id="receiptQrCode" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=EcoSortImpact" alt="EcoSort impact QR code" class="rounded border" style="width: 150px; height: 150px; object-fit: cover;" />
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <div class="bg-light rounded-4 p-3 border">
-                                <div class="small text-muted text-uppercase">CO2 Saved</div>
-                                <div class="fw-bold fs-4 text-primary" id="receiptCo2Saved">0.00 kg</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="bg-light rounded-4 p-3 border">
-                                <div class="small text-muted text-uppercase">Methane Diverted</div>
-                                <div class="fw-bold fs-4 text-success" id="receiptMethaneSaved">0.00 kg</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-success bg-opacity-10 border border-success rounded-4 p-3">
-                        <div class="small text-uppercase text-success fw-bold mb-2">Items Sorted Today</div>
-                        <div class="fw-bold fs-5 text-dark" id="receiptItemsSorted">0 Items</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="row g-3 mb-3">
+      <div class="col-lg-8"><div class="panel h-100"><div class="panel-head"><h2 class="section-title">Waste mix</h2><span class="section-note" id="mixTotal">0 items</span></div><div class="mix-bars">
+        <div class="mix-row"><span>Recycle</span><div class="mix-track"><div id="mixRecycle" class="mix-fill recycle" style="width:0"></div></div><strong id="mixRecyclePct">0%</strong></div>
+        <div class="mix-row"><span>Compost</span><div class="mix-track"><div id="mixCompost" class="mix-fill compost" style="width:0"></div></div><strong id="mixCompostPct">0%</strong></div>
+        <div class="mix-row"><span>Trash</span><div class="mix-track"><div id="mixTrash" class="mix-fill trash" style="width:0"></div></div><strong id="mixTrashPct">0%</strong></div>
+        <div class="mix-row"><span>Manual</span><div class="mix-track"><div id="mixManual" class="mix-fill manual" style="width:0"></div></div><strong id="mixManualPct">0%</strong></div>
+      </div></div></div>
     </div>
 
-    <script>
-        // ============================================================
-        // 1. CONFIG
-        // ============================================================
-        const API_BASE = 'http://localhost:5000/api';
-        let streamChart, accuracyChart, totalAccuracyChart;
-        let stats = { recycle: 0, compost: 0, trash: 0, manual: 0, aiCorrect: 0, aiIncorrect: 0 };
-        let accuracyData = [];
-        let accuracyHistory = [];
-        let queueItems = [];
-        let fullTelemetryLog = [];
-        let scanIdCounter = 0;
-        let confidenceThreshold = 75.0;
-        let selectedAccuracyRange = 'all';
-        let citizenSampleQueue = [];
-        let citizenCurrentItemIndex = 0;
-        let citizenVoteCooldown = false;
-        let citizenReviewLock = false;
-        let citizenReviewTimer = null;
-        let userXP = 0;
-        let userLevel = 1;
-        let sortingStreak = 0;
-        let unlockedBadges = { compost: false, hazard: false, streak: false, legend: false };
-        let userTrustRegistry = {};
-        const CITIZEN_DAILY_LIMIT = 10;
-        const CO2_PER_RECYCLE = 0.45;
-        const METHANE_PER_COMPOST = 0.12;
-        const COST_SAVINGS_PER_KG = 0.18;
-
-        // ============================================================
-        // 2. FETCH STATS FROM BACKEND
-        // ============================================================
-        async function fetchStats() {
-            try {
-                const response = await fetch(`${API_BASE}/stats`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                // data keys: organic, trash, recycle, manual
-                // Map to our internal stats
-                stats.recycle = data.recycle || 0;
-                stats.compost = data.organic || 0;
-                stats.trash = data.trash || 0;
-                stats.manual = data.manual || 0;
-                // aiCorrect / aiIncorrect not from backend, keep as is or estimate
-                // We'll keep them as they were (or recalc)
-                // For now, we'll just update the UI
-                updateDashboard();
-                document.getElementById('backendStatus').className = 'backend-status online';
-                document.getElementById('backendStatus').innerHTML = '<i class="fas fa-server me-1"></i> Backend Online';
-            } catch (error) {
-                console.error('Error fetching stats:', error);
-                document.getElementById('backendStatus').className = 'backend-status offline';
-                document.getElementById('backendStatus').innerHTML = '<i class="fas fa-server me-1"></i> Backend Offline';
-            }
-        }
-
-        async function resetBackendStats() {
-            try {
-                const response = await fetch(`${API_BASE}/reset`, { method: 'POST' });
-                if (!response.ok) throw new Error('Reset failed');
-                await fetchStats(); // refresh after reset
-                // Also reset local UI queues
-                queueItems = [];
-                fullTelemetryLog = [];
-                renderQueue();
-                renderLogTable();
-                alert('Backend stats reset successfully.');
-            } catch (error) {
-                alert('Failed to reset backend: ' + error);
-            }
-        }
-
-        // ============================================================
-        // 3. UI UPDATE FUNCTIONS
-        // ============================================================
-        function getTrustUserKey() {
-            const mode = document.getElementById('modeSelect')?.value || 'citizen';
-            if (mode === 'admin') return 'admin-user';
-            if (mode === 'employee') return 'employee-user';
-            return 'community-user';
-        }
-
-        function normalizeTrustCategory(category) {
-            const map = {
-                recycle: 'recycle',
-                recyclable: 'recycle',
-                compost: 'compost',
-                trash: 'trash',
-                garbage: 'trash',
-                manual: 'manual',
-                hazard: 'manual',
-                ewaste: 'manual',
-                battery: 'manual'
-            };
-            return map[String(category || '').toLowerCase()] || String(category || '').toLowerCase();
-        }
-
-        function getTrustEntry(name) {
-            if (!userTrustRegistry[name]) {
-                userTrustRegistry[name] = { name, votes: 0, incorrect: 0, trust: 100, power: 1, restricted: false };
-            }
-            return userTrustRegistry[name];
-        }
-
-        function renderUserTrustTable() {
-            const tbody = document.getElementById('trustUserTableBody');
-            if (!tbody) return;
-            const rows = Object.values(userTrustRegistry).sort((a, b) => b.trust - a.trust);
-            tbody.innerHTML = rows.map(user => {
-                const rate = user.votes ? Math.max(0, ((user.votes - user.incorrect) / user.votes) * 100) : 100;
-                const trustClass = user.trust >= 80 ? 'high' : user.trust >= 70 ? 'warning' : 'low';
-                const status = user.restricted ? 'Limited power' : 'Full power';
-                return `
-                    <tr>
-                        <td class="fw-semibold">${user.name}</td>
-                        <td>${user.votes}</td>
-                        <td>${user.incorrect}</td>
-                        <td>${rate.toFixed(0)}%</td>
-                        <td><span class="trust-badge ${trustClass}">${user.trust}%</span></td>
-                        <td>${status}</td>
-                    </tr>
-                `;
-            }).join('') || '<tr><td colspan="6" class="text-center text-muted py-3">No trust data yet.</td></tr>';
-        }
-
-        function updateTrustOnVote(username, rawCategory, actualGuess) {
-            const entry = getTrustEntry(username);
-            const actual = normalizeTrustCategory(actualGuess);
-            const selected = normalizeTrustCategory(rawCategory);
-            const isCorrect = actual === selected;
-            entry.votes += 1;
-            if (!isCorrect) entry.incorrect += 1;
-            const wrongRate = entry.votes ? entry.incorrect / entry.votes : 0;
-            entry.trust = Math.max(0, Math.round(100 - (wrongRate * 100)));
-            entry.restricted = wrongRate >= 0.3;
-            entry.power = entry.restricted ? 0.25 : 1;
-            renderUserTrustTable();
-            return entry.power;
-        }
-
-        function updateThreshold(val) {
-            confidenceThreshold = parseFloat(val);
-            document.getElementById('thresholdVal').innerText = `${val}%`;
-        }
-
-        function playAlertSound() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(440, ctx.currentTime);
-                gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.15);
-            } catch (e) {}
-        }
-
-        function switchMode() {
-            const mode = document.getElementById('modeSelect').value;
-            document.body.className = `mode-${mode}`;
-            const profileBox = document.querySelector('.user-profile-box');
-            if (profileBox) {
-                profileBox.style.display = mode === 'citizen' ? 'flex' : 'none';
-            }
-            if (mode === 'admin') {
-                document.getElementById('userNameDisplay').innerText = 'Operations · Admin';
-            } else if (mode === 'employee') {
-                document.getElementById('userNameDisplay').innerText = 'Floor · Employee';
-            } else {
-                document.getElementById('userNameDisplay').innerText = 'Community Contributor';
-            }
-            renderUserTrustTable();
-        }
-
-        function getCitizenStorageKey() {
-            const today = new Date().toISOString().slice(0, 10);
-            return `ecosort_citizen_votes_${today}`;
-        }
-
-        function getCitizenVoteCount() {
-            const raw = localStorage.getItem(getCitizenStorageKey());
-            return raw ? Number(raw) : 0;
-        }
-
-        function updateCitizenProgressUI() {
-            const count = getCitizenVoteCount();
-            const percent = Math.min((count / CITIZEN_DAILY_LIMIT) * 100, 100);
-            const bar = document.getElementById('citizenProgressBar');
-            const text = document.getElementById('citizenProgressText');
-            if (bar) bar.style.width = `${percent}%`;
-            if (text) text.innerText = `${count} / ${CITIZEN_DAILY_LIMIT} daily contributions completed`;
-        }
-
-        function setCitizenButtonsDisabled(disabled) {
-            const buttons = document.querySelectorAll('.citizen-vote-btn');
-            buttons.forEach(button => {
-                button.disabled = disabled;
-            });
-        }
-
-        function showCitizenToast(message) {
-            let toast = document.getElementById('citizenToast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'citizenToast';
-                toast.className = 'citizen-toast';
-                document.body.appendChild(toast);
-            }
-            toast.textContent = message;
-            toast.classList.add('show');
-            clearTimeout(showCitizenToast.timeoutId);
-            showCitizenToast.timeoutId = setTimeout(() => {
-                toast.classList.remove('show');
-            }, 1800);
-        }
-
-        function initCitizenQueue() {
-            citizenSampleQueue = [
-                { label: 'Crushed aerosol can', description: 'Metal can with pressure residue and edge damage.', aiGuess: 'Hazard / E-Waste', aiConfidence: 48, icon: 'fa-bomb', tone: 'linear-gradient(135deg, #fff3f3, #f7f9ff)' },
-                { label: 'Battery in paper bag', description: 'Potential lithium battery mixed in refuse bag.', aiGuess: 'Hazard / Battery', aiConfidence: 72, icon: 'fa-battery-three-quarters', tone: 'linear-gradient(135deg, #fff7ef, #eef7ff)' },
-                { label: 'Dirty cardboard box', description: 'Heavy food contamination with greasy residue.', aiGuess: 'Trash', aiConfidence: 59, icon: 'fa-box', tone: 'linear-gradient(135deg, #f5f7ec, #eefaf4)' },
-                { label: 'Mixed food container', description: 'Plastic tray with residual food waste and wrapper.', aiGuess: 'Compost', aiConfidence: 63, icon: 'fa-utensils', tone: 'linear-gradient(135deg, #edfdf4, #f9f6ef)' },
-                { label: 'Crushed plastic bottle', description: 'Flattened bottle with attached cap and partly crushed body.', aiGuess: 'Recyclable', aiConfidence: 79, icon: 'fa-wine-bottle', tone: 'linear-gradient(135deg, #eef6ff, #f4f7ff)' }
-            ];
-            citizenCurrentItemIndex = 0;
-            userTrustRegistry = {
-                'admin-user': { name: 'Admin User', votes: 18, incorrect: 2, trust: 89, power: 1, restricted: false },
-                'employee-user': { name: 'Employee User', votes: 12, incorrect: 3, trust: 75, power: 1, restricted: false },
-                'community-user': { name: 'Community User', votes: 0, incorrect: 0, trust: 100, power: 1, restricted: false }
-            };
-            updateCitizenProgressUI();
-            renderUserTrustTable();
-            loadNextCitizenItem();
-        }
-
-        function loadNextCitizenItem() {
-            if (!citizenSampleQueue.length) return;
-            const item = citizenSampleQueue[citizenCurrentItemIndex % citizenSampleQueue.length];
-            const art = document.getElementById('citizenSampleArt');
-            const label = document.getElementById('citizenImageLabel');
-            const meta = document.getElementById('citizenImageMeta');
-            const guessEl = document.getElementById('citizenAIGuess');
-            if (art) art.style.background = item.tone;
-            if (label) label.innerText = item.label;
-            if (meta) meta.innerText = item.description;
-            if (guessEl) guessEl.innerText = `AI Guess: ${item.aiGuess} (${item.aiConfidence}% confidence)`;
-            const icon = art?.querySelector('i');
-            if (icon) {
-                icon.className = `fas ${item.icon}`;
-            }
-            citizenCurrentItemIndex = (citizenCurrentItemIndex + 1) % citizenSampleQueue.length;
-            beginCitizenReviewDelay();
-        }
-
-        function beginCitizenReviewDelay() {
-            citizenReviewLock = true;
-            setCitizenButtonsDisabled(true);
-            const note = document.getElementById('citizenVoteDelayText');
-            if (note) note.innerText = 'Review the image carefully before voting...';
-            clearTimeout(citizenReviewTimer);
-            citizenReviewTimer = setTimeout(() => {
-                citizenReviewLock = false;
-                if (getCitizenVoteCount() < CITIZEN_DAILY_LIMIT) {
-                    setCitizenButtonsDisabled(false);
-                }
-                const note = document.getElementById('citizenVoteDelayText');
-                if (note) note.innerText = 'Ready to vote — your trust score influences real voting power.';
-            }, 1400);
-        }
-
-        function submitCitizenVote(category) {
-            const count = getCitizenVoteCount();
-            const item = citizenSampleQueue[(citizenCurrentItemIndex + citizenSampleQueue.length - 1) % citizenSampleQueue.length];
-            if (count >= CITIZEN_DAILY_LIMIT) {
-                showCitizenToast('Daily contribution limit reached! Thank you for keeping the dataset clean.');
-                setCitizenButtonsDisabled(true);
-                updateCitizenProgressUI();
-                return;
-            }
-            if (citizenReviewLock || citizenVoteCooldown) return;
-
-            const expectedCategory = normalizeTrustCategory(item.aiGuess);
-            const selectedCategory = normalizeTrustCategory(category);
-            const voteWeight = updateTrustOnVote(getTrustUserKey(), selectedCategory, expectedCategory);
-            const isCorrectVote = selectedCategory === expectedCategory;
-            if (isCorrectVote) {
-                awardXP(true, selectedCategory);
-            } else {
-                awardXP(false, selectedCategory);
-            }
-
-            citizenVoteCooldown = true;
-            setCitizenButtonsDisabled(true);
-            const nextCount = count + 1;
-            localStorage.setItem(getCitizenStorageKey(), String(nextCount));
-            const aiConfidence = item.aiConfidence + (Math.random() * 8 - 4);
-            const weightedConfidence = Number(Math.max(50, Math.min(99, aiConfidence * voteWeight)).toFixed(1));
-            accuracyHistory.push({ timestamp: Date.now(), confidence: weightedConfidence });
-            fullTelemetryLog.unshift({
-                time: new Date().toLocaleTimeString(),
-                item: `${item.label} [COMMUNITY REVIEWED]`,
-                cat: category,
-                conf: weightedConfidence
-            });
-            if (fullTelemetryLog.length > 25) fullTelemetryLog.pop();
-            renderLogTable();
-            renderAccuracyChart();
-            updateCitizenProgressUI();
-            showCitizenToast(voteWeight < 1 ? 'Trust-limited vote recorded. Your voting power is reduced due to low accuracy.' : 'Thank you! Vote recorded.');
-
-            setTimeout(() => {
-                citizenVoteCooldown = false;
-                if (getCitizenVoteCount() < CITIZEN_DAILY_LIMIT) {
-                    setCitizenButtonsDisabled(false);
-                }
-                loadNextCitizenItem();
-            }, 2000);
-        }
-
-        function getLevelTitle(level) {
-            if (level >= 5) return 'Planet Guardian';
-            if (level >= 4) return 'Eco-Warrior';
-            if (level >= 3) return 'Sorting Apprentice';
-            if (level >= 2) return 'Waste Recycler';
-            return 'Waste Rookie';
-        }
-
-        function updateGamificationUI() {
-            const levelStartXP = (userLevel - 1) * 100;
-            const currentLevelProgress = Math.max(0, userXP - levelStartXP);
-            const nextLevel = userLevel + 1;
-            const currentLevelGoal = 100;
-            const progressPercent = Math.min((currentLevelProgress / currentLevelGoal) * 100, 100);
-
-            const badge = document.getElementById('userProfileBadge');
-            if (badge) badge.innerText = `🏆 Lvl ${userLevel} ${getLevelTitle(userLevel)} | ${userXP} XP`;
-
-            const xpBar = document.getElementById('xpProgressBar');
-            if (xpBar) xpBar.style.width = `${progressPercent}%`;
-
-            const xpText = document.getElementById('xpProgressText');
-            if (xpText) xpText.innerText = `${Math.min(currentLevelProgress, currentLevelGoal)}/${currentLevelGoal} XP to Lvl ${nextLevel}`;
-
-            const levelTitle = document.getElementById('userLevelTitle');
-            if (levelTitle) levelTitle.innerText = `Level ${userLevel}: ${getLevelTitle(userLevel)}`;
-
-            const userXPBadge = document.getElementById('userXPBadge');
-            if (userXPBadge) userXPBadge.innerText = `${userXP} XP`;
-
-            const streakBadge = document.getElementById('streakBadge');
-            if (streakBadge) {
-                const boostText = sortingStreak > 5 ? ' 1.5x XP Boost Active' : '';
-                streakBadge.innerText = `🔥 ${sortingStreak} Consecutive Correct Sorts${boostText}`;
-                streakBadge.className = `badge ${sortingStreak > 5 ? 'bg-success' : 'bg-warning'} text-dark px-3 py-2`;
-            }
-
-            const levelProgressBar = document.getElementById('levelProgressBar');
-            if (levelProgressBar) levelProgressBar.style.width = `${progressPercent}%`;
-
-            const xpToNextText = document.getElementById('xpToNextLevelText');
-            if (xpToNextText) xpToNextText.innerText = `${Math.min(currentLevelProgress, currentLevelGoal)}/${currentLevelGoal} XP to Lvl ${nextLevel}`;
-
-            Object.entries(unlockedBadges).forEach(([key, isUnlocked]) => {
-                const badgeElement = document.getElementById(`badge-${key}`);
-                if (!badgeElement) return;
-                badgeElement.classList.toggle('unlocked', isUnlocked);
-                badgeElement.classList.toggle('locked', !isUnlocked);
-            });
-        }
-
-        function evaluateBadges() {
-            unlockedBadges.compost = stats.compost >= 5;
-            unlockedBadges.hazard = stats.manual >= 2;
-            unlockedBadges.streak = sortingStreak >= 5;
-            unlockedBadges.legend = userXP >= 500;
-            updateGamificationUI();
-        }
-
-        function awardXP(isCorrect, category) {
-            if (!isCorrect) {
-                sortingStreak = 0;
-                evaluateBadges();
-                return;
-            }
-            sortingStreak += 1;
-            let xpGain = 20 + (sortingStreak * 5);
-            if (category === 'manual') xpGain += 15;
-            if (sortingStreak > 5) xpGain = Math.round(xpGain * 1.5);
-            userXP += xpGain;
-            checkLevelUp();
-            evaluateBadges();
-        }
-
-        function checkLevelUp() {
-            while (userXP >= userLevel * 100) {
-                userLevel += 1;
-                playAlertSound();
-                showCitizenToast(`🎉 LEVEL UP! You are now a Level ${userLevel} ${getLevelTitle(userLevel)}!`);
-            }
-            updateGamificationUI();
-        }
-
-        function generateImpactReceipt() {
-            const co2 = (stats.recycle * CO2_PER_RECYCLE).toFixed(2);
-            const methane = (stats.compost * METHANE_PER_COMPOST).toFixed(2);
-            const itemCount = stats.recycle + stats.compost + stats.trash + stats.manual;
-
-            document.getElementById('receiptUserLevel').innerText = `Level ${userLevel}: ${getLevelTitle(userLevel)}`;
-            document.getElementById('receiptCo2Saved').innerText = `${co2} kg`;
-            document.getElementById('receiptMethaneSaved').innerText = `${methane} kg`;
-            document.getElementById('receiptItemsSorted').innerText = `${itemCount} Items`;
-
-            const qrData = `EcoSortImpact|Level:${userLevel}|XP:${userXP}|CO2:${co2}|Methane:${methane}`;
-            document.getElementById('receiptQrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
-        }
-
-        // ============================================================
-        // 4. CHART INITIALIZATION
-        // ============================================================
-        function initCharts() {
-            streamChart = new Chart(document.getElementById('streamChart').getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Recycle', 'Compost', 'Trash', 'Hazard/Review'],
-                    datasets: [{ data: [0, 0, 0, 0], backgroundColor: ['#3498db', '#2ecc71', '#95a5a6', '#e74c3c'], borderWidth: 2 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '65%' }
-            });
-
-            totalAccuracyChart = new Chart(document.getElementById('totalAccuracyChart').getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Correct Auto', 'Manual Review'],
-                    datasets: [{ data: [0, 0], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 2 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '65%' }
-            });
-
-            accuracyChart = new Chart(document.getElementById('accuracyChart').getContext('2d'), {
-                type: 'line',
-                data: { labels: [], datasets: [{ label: 'AI Confidence %', data: [], borderColor: '#9b59b6', backgroundColor: 'rgba(155, 89, 182, 0.2)', borderWidth: 2, fill: true, tension: 0.3 }] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { min: 0, max: 100 } },
-                    animation: { duration: 400 },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.parsed.y.toFixed(1)}% avg accuracy`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // ============================================================
-        // 5. DASHBOARD UPDATE (from stats)
-        // ============================================================
-        function updateDashboard() {
-            const total = stats.recycle + stats.compost + stats.trash + stats.manual;
-
-            document.getElementById('cntRecycle').innerText = stats.recycle;
-            document.getElementById('cntCompost').innerText = stats.compost;
-            document.getElementById('cntTrash').innerText = stats.trash;
-            document.getElementById('cntManual').innerText = stats.manual;
-
-            document.getElementById('pctRecycle').innerText = total ? `${((stats.recycle / total) * 100).toFixed(0)}% of total` : '0% of total';
-            document.getElementById('pctCompost').innerText = total ? `${((stats.compost / total) * 100).toFixed(0)}% of total` : '0% of total';
-            document.getElementById('pctTrash').innerText = total ? `${((stats.trash / total) * 100).toFixed(0)}% of total` : '0% of total';
-            document.getElementById('pctManual').innerText = total ? `${((stats.manual / total) * 100).toFixed(0)}% of total` : '0% of total';
-
-            const co2 = stats.recycle * CO2_PER_RECYCLE;
-            const methane = stats.compost * METHANE_PER_COMPOST;
-            document.getElementById('co2Saved').innerText = co2.toFixed(2);
-            document.getElementById('methaneSaved').innerText = methane.toFixed(2);
-            document.getElementById('costSaved').innerText = `$${((co2 + methane) * COST_SAVINGS_PER_KG).toFixed(2)}`;
-
-            streamChart.data.datasets[0].data = [stats.recycle, stats.compost, stats.trash, stats.manual];
-            streamChart.update();
-
-            // accuracy chart: we don't have aiCorrect/Incorrect from backend, so we keep a simple estimate
-            // We'll keep the existing values from UI state
-            totalAccuracyChart.data.datasets[0].data = [stats.aiCorrect || 0, stats.aiIncorrect || 0];
-            totalAccuracyChart.update();
-
-            // confidence chart is updated separately
-            renderAccuracyChart();
-        }
-
-        // ============================================================
-        // 6. LOG & QUEUE MANAGEMENT
-        // ============================================================
-        function renderLogTable() {
-            const tbody = document.getElementById('logTableBody');
-            tbody.innerHTML = '';
-            if (!fullTelemetryLog.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No data yet. Connect to backend or click test buttons.</td></tr>';
-                return;
-            }
-            const recent = [...fullTelemetryLog].slice(0, 10);
-            recent.forEach(row => {
-                const entry = document.createElement('tr');
-                const colors = { recycle: 'bg-primary', compost: 'bg-success', trash: 'bg-secondary', manual: 'bg-danger' };
-                entry.innerHTML = `
-                    <td class="text-muted">${row.time}</td>
-                    <td class="fw-semibold">${row.item}</td>
-                    <td><span class="badge ${colors[row.cat] || 'bg-secondary'} text-uppercase">${row.cat}</span></td>
-                    <td><span class="fw-bold ${row.conf < confidenceThreshold ? 'text-danger' : 'text-success'}">${row.conf}%</span></td>
-                    <td><span class="badge bg-light text-dark border">${row.conf < confidenceThreshold ? 'Flagged' : 'Processed'}</span></td>
-                `;
-                tbody.appendChild(entry);
-            });
-        }
-
-        function renderQueue() {
-            const container = document.getElementById('manualQueueContainer');
-            const emptyMsg = document.getElementById('emptyQueueMsg');
-
-            Array.from(container.children).forEach(child => {
-                if (child.id !== 'emptyQueueMsg') child.remove();
-            });
-
-            if (queueItems.length === 0) {
-                emptyMsg.style.display = 'block';
-            } else {
-                emptyMsg.style.display = 'none';
-                queueItems.forEach(q => {
-                    const div = document.createElement('div');
-                    div.className = 'manual-queue-item d-flex justify-content-between align-items-center';
-                    div.innerHTML = `
-                        <div>
-                            <h6 class="mb-1 text-dark fw-bold">⚠️ ${q.item}</h6>
-                            <span class="badge bg-dark text-white">Scan ID: #${q.id}</span>
-                            <span class="badge bg-danger">Confidence: ${q.conf}%</span>
-                        </div>
-                        <div class="btn-group shadow-sm">
-                            <button onclick="resolveQueueItem(${q.id}, 'recycle')" class="btn btn-sm btn-outline-primary">Recycle</button>
-                            <button onclick="resolveQueueItem(${q.id}, 'compost')" class="btn btn-sm btn-outline-success">Compost</button>
-                            <button onclick="resolveQueueItem(${q.id}, 'trash')" class="btn btn-sm btn-outline-secondary">Trash</button>
-                            <button onclick="resolveQueueItem(${q.id}, 'manual')" class="btn btn-sm btn-danger"><i class="fas fa-biohazard"></i> E-Waste</button>
-                        </div>
-                    `;
-                    container.appendChild(div);
-                });
-            }
-        }
-
-        function resolveQueueItem(id, correctCat) {
-            const queueItem = queueItems.find(q => q.id === id);
-            queueItems = queueItems.filter(q => q.id !== id);
-            stats.manual = Math.max(0, stats.manual - 1);
-            stats[correctCat] = (stats[correctCat] || 0) + 1;
-            if (queueItem) {
-                const expectedCategory = queueItem.originalCategory || correctCat;
-                const voteResult = normalizeTrustCategory(correctCat) === normalizeTrustCategory(expectedCategory);
-                updateTrustOnVote('employee-user', correctCat, expectedCategory);
-                if (!voteResult) {
-                    getTrustEntry('employee-user').incorrect += 1;
-                }
-            }
-            renderQueue();
-            updateDashboard();
-        }
-
-        function addLogEntry(cat, item, conf) {
-            const timeStr = new Date().toLocaleTimeString();
-            fullTelemetryLog.unshift({ time: timeStr, item, cat, conf });
-            if (fullTelemetryLog.length > 25) fullTelemetryLog.pop();
-            renderLogTable();
-        }
-
-        function processScan(cat, item, conf) {
-            scanIdCounter++;
-            const originalCategory = cat;
-            const isCorrect = cat === 'manual' || conf >= confidenceThreshold;
-            if (isCorrect && cat !== 'manual') {
-                stats.aiCorrect = (stats.aiCorrect || 0) + 1;
-            } else {
-                stats.aiIncorrect = (stats.aiIncorrect || 0) + 1;
-                playAlertSound();
-            }
-            if (!isCorrect) {
-                cat = 'manual';
-                queueItems.push({ id: scanIdCounter, item, conf, originalCategory });
-                stats.manual = (stats.manual || 0) + 1;
-                awardXP(false, cat);
-            } else {
-                stats[cat] = (stats[cat] || 0) + 1;
-                if (document.getElementById('modeSelect')?.value === 'citizen') {
-                    awardXP(true, cat);
-                }
-            }
-            accuracyData.push(conf);
-            if (accuracyData.length > 15) accuracyData.shift();
-            updateDashboard();
-            addLogEntry(cat, item, conf);
-            renderQueue();
-            renderAccuracyChart();
-        }
-
-        // ============================================================
-        // 7. ACCURACY CHART WITH RANGE
-        // ============================================================
-        function setAccuracyRange(range) {
-            selectedAccuracyRange = range;
-            document.querySelectorAll('[data-range]').forEach(button => {
-                button.classList.toggle('active', button.dataset.range === range);
-            });
-            renderAccuracyChart();
-        }
-
-        function formatBucketLabel(date, range) {
-            const dayFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
-            const shortFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
-            const hourFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric' });
-            const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' });
-            if (range === '24h') return hourFormatter.format(date);
-            if (range === '7d' || range === '30d') return dayFormatter.format(date);
-            if (range === '90d') return `Wk ${dayFormatter.format(date)}`;
-            if (range === '365d') return `${dayFormatter.format(date)}`;
-            return monthFormatter.format(date);
-        }
-
-        function getRangeWindow(range) {
-            const now = new Date();
-            const end = new Date(now.getTime());
-            let start;
-            switch (range) {
-                case '24h':
-                    start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-                    return { start, end, bucketMs: 60 * 60 * 1000, bucketLabel: 'hour' };
-                case '7d':
-                    start = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
-                    return { start, end, bucketMs: 24 * 60 * 60 * 1000, bucketLabel: 'day' };
-                case '30d':
-                    start = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
-                    return { start, end, bucketMs: 24 * 60 * 60 * 1000, bucketLabel: 'day' };
-                case '90d':
-                    start = new Date(now.getTime() - 89 * 24 * 60 * 60 * 1000);
-                    return { start, end, bucketMs: 7 * 24 * 60 * 60 * 1000, bucketLabel: 'week' };
-                case '365d':
-                    start = new Date(now.getTime() - 364 * 24 * 60 * 60 * 1000);
-                    return { start, end, bucketMs: 14 * 24 * 60 * 60 * 1000, bucketLabel: '2-week' };
-                default:
-                    start = new Date('2022-01-01T00:00:00');
-                    return { start, end, bucketMs: 30 * 24 * 60 * 60 * 1000, bucketLabel: 'month' };
-            }
-        }
-
-        function aggregateHistoryByRange(history, range) {
-            const { start, end, bucketMs } = getRangeWindow(range);
-            const startTs = start.getTime();
-            const endTs = end.getTime();
-            const buckets = [];
-            const bucketCount = Math.max(1, Math.ceil((endTs - startTs) / bucketMs) + 1);
-            for (let i = 0; i < bucketCount; i++) {
-                const bucketStart = new Date(startTs + i * bucketMs);
-                const bucketEnd = new Date(bucketStart.getTime() + bucketMs);
-                const matches = history.filter(entry => {
-                    const valueTs = new Date(entry.timestamp).getTime();
-                    return valueTs >= bucketStart.getTime() && valueTs < bucketEnd.getTime();
-                });
-                let avg = 0;
-                if (matches.length) {
-                    avg = matches.reduce((sum, entry) => sum + Number(entry.confidence), 0) / matches.length;
-                }
-                buckets.push({
-                    label: formatBucketLabel(bucketStart, range),
-                    value: Number(avg.toFixed(1))
-                });
-            }
-            return buckets;
-        }
-
-        function renderAccuracyChart() {
-            const history = accuracyHistory.length ? accuracyHistory : generateDemoHistory(180);
-            const buckets = aggregateHistoryByRange(history, selectedAccuracyRange);
-            accuracyChart.data.labels = buckets.map(bucket => bucket.label);
-            accuracyChart.data.datasets[0].data = buckets.map(bucket => bucket.value);
-            accuracyChart.update();
-        }
-
-        function generateDemoHistory(totalPoints) {
-            const result = [];
-            const now = Date.now();
-            const startDate = new Date('2022-01-01T00:00:00');
-            const startMs = startDate.getTime();
-            const endMs = now;
-            for (let index = 0; index < totalPoints; index++) {
-                const t = startMs + ((index / totalPoints) * (endMs - startMs));
-                const date = new Date(t);
-                const seasonal = Math.sin(date.getMonth() / 12 * Math.PI * 2) * 4;
-                const drift = (date.getFullYear() - 2022) * 1.8;
-                const confidence = Math.min(98, Math.max(68, 88 + seasonal + drift + (Math.random() * 8 - 4)));
-                result.push({ timestamp: t, confidence: Number(confidence.toFixed(1)) });
-            }
-            return result;
-        }
-
-        // ============================================================
-        // 8. DUMMY DATA & DEMO
-        // ============================================================
-        function loadDummyData(forceCat) {
-            const items = {
-                recycle: ['Plastic Bottle', 'Cardboard Box', 'Aluminum Can'],
-                compost: ['Apple Core', 'Banana Peel', 'Food Waste'],
-                trash: ['Chip Bag', 'Styrofoam Container', 'Non-recyclable Plastic'],
-                manual: ['Leaking Battery', 'Aerosol Can', 'E-Waste Fragment']
-            };
-            const cat = forceCat || Object.keys(items)[Math.floor(Math.random() * 4)];
-            const item = items[cat][Math.floor(Math.random() * items[cat].length)];
-            const conf = cat === 'manual' ? (Math.random() * 20 + 20).toFixed(1) : (Math.random() * 15 + 85).toFixed(1);
-            processScan(cat, item, parseFloat(conf));
-        }
-
-        function loadFullDemoStats() {
-            // Generate a realistic set of demo data
-            const items = {
-                recycle: ['Plastic Bottle', 'Cardboard Box', 'Aluminum Can', 'Glass Jar', 'Newspaper Stack'],
-                compost: ['Apple Core', 'Banana Peel', 'Coffee Grounds', 'Food Waste', 'Garden Trimmings'],
-                trash: ['Chip Bag', 'Styrofoam Container', 'Non-recyclable Plastic', 'Cigarette Butt', 'Used Tissue'],
-                manual: ['Leaking Battery', 'Aerosol Can', 'E-Waste Fragment', 'Paint Can', 'Medical Waste']
-            };
-
-            // Clear existing
-            stats = { recycle: 0, compost: 0, trash: 0, manual: 0, aiCorrect: 0, aiIncorrect: 0 };
-            queueItems = [];
-            fullTelemetryLog = [];
-            scanIdCounter = 0;
-            accuracyData = [];
-            accuracyHistory = [];
-
-            const totalScans = 240;
-            for (let i = 0; i < totalScans; i++) {
-                const categories = ['recycle', 'compost', 'trash', 'manual'];
-                const category = categories[Math.floor(Math.random() * categories.length)];
-                const item = items[category][Math.floor(Math.random() * items[category].length)];
-                const baseConf = category === 'manual' ? 45 + Math.random() * 35 : 82 + Math.random() * 15;
-                const conf = Number(baseConf.toFixed(1));
-                const ts = Date.now() - (Math.random() * 2 * 365 * 24 * 60 * 60 * 1000); // up to 2 years ago
-                accuracyHistory.push({ timestamp: ts, confidence: conf });
-
-                if (conf >= confidenceThreshold && category !== 'manual') {
-                    stats.aiCorrect = (stats.aiCorrect || 0) + 1;
-                    stats[category] = (stats[category] || 0) + 1;
-                } else {
-                    stats.aiIncorrect = (stats.aiIncorrect || 0) + 1;
-                    if (category === 'manual') {
-                        queueItems.push({ id: ++scanIdCounter, item, conf, originalCategory: category });
-                        stats.manual = (stats.manual || 0) + 1;
-                    } else {
-                        queueItems.push({ id: ++scanIdCounter, item, conf, originalCategory: category });
-                        stats.manual = (stats.manual || 0) + 1;
-                    }
-                }
-                fullTelemetryLog.unshift({
-                    time: new Date(ts).toLocaleString(),
-                    item,
-                    cat: category,
-                    conf
-                });
-                accuracyData.push(conf);
-            }
-            if (accuracyData.length > 18) accuracyData = accuracyData.slice(-18);
-            fullTelemetryLog = fullTelemetryLog.slice(0, 18);
-            // Ensure some minimal counts
-            stats.recycle = Math.max(38, stats.recycle || 38);
-            stats.compost = Math.max(27, stats.compost || 27);
-            stats.trash = Math.max(20, stats.trash || 20);
-            stats.manual = Math.max(12, stats.manual || 12);
-            stats.aiCorrect = Math.max(150, stats.aiCorrect || 150);
-            stats.aiIncorrect = Math.max(55, stats.aiIncorrect || 55);
-            renderQueue();
-            updateDashboard();
-            renderAccuracyChart();
-            renderLogTable();
-        }
-
-        function exportLogsToCSV() {
-            if (fullTelemetryLog.length === 0) return alert('No telemetry data to export!');
-            let csv = 'Time,Item,Category,Confidence%\n';
-            fullTelemetryLog.forEach(row => {
-                csv += `"${row.time}","${row.item}","${row.cat}",${row.conf}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `ecosort_telemetry_${Date.now()}.csv`;
-            a.click();
-        }
-
-        function resetDemoStats() {
-            stats = { recycle: 0, compost: 0, trash: 0, manual: 0, aiCorrect: 0, aiIncorrect: 0 };
-            accuracyData = [];
-            accuracyHistory = [];
-            queueItems = [];
-            fullTelemetryLog = [];
-            scanIdCounter = 0;
-            selectedAccuracyRange = 'all';
-            userXP = 0;
-            userLevel = 1;
-            sortingStreak = 0;
-            unlockedBadges = { compost: false, hazard: false, streak: false, legend: false };
-            localStorage.removeItem(getCitizenStorageKey());
-            setCitizenButtonsDisabled(false);
-            setAccuracyRange('all');
-            updateDashboard();
-            renderQueue();
-            renderLogTable();
-            updateCitizenProgressUI();
-            updateGamificationUI();
-        }
-
-        // ============================================================
-        // 9. POLLING LOOP
-        // ============================================================
-        function startPolling() {
-            fetchStats(); // initial
-            setInterval(fetchStats, 2000); // every 2 seconds
-        }
-
-        // ============================================================
-        // 10. INIT
-        // ============================================================
-        window.onload = function() {
-            initCharts();
-            initCitizenQueue();
-            renderQueue();
-            renderLogTable();
-            updateGamificationUI();
-            renderUserTrustTable();
-            switchMode();
-            // Load demo data for visual richness
-            loadFullDemoStats();
-            startPolling();
-        };
-    </script>
+    <div class="panel">
+      <div class="panel-head"><div><h2 class="section-title">Recent scans</h2><div class="section-note">No synthetic accuracy history. This table reflects the local scanner.</div></div><div class="d-flex gap-2"><a class="btn btn-sm btn-outline-secondary" href="/api/export.csv"><i class="fa-solid fa-file-csv me-1"></i>Export CSV</a><a class="btn btn-sm btn-outline-secondary" href="/api/export.json"><i class="fa-solid fa-code me-1"></i>Export JSON</a></div></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0 log-table">
+          <thead><tr><th>Time</th><th>Item</th><th>Tag</th><th>Confidence</th><th>Status</th></tr></thead>
+          <tbody id="logTableBody"><tr><td colspan="5" class="text-center text-muted py-4">No scans yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="receiptTitle"><i class="fa-solid fa-receipt me-2"></i>EcoSort receipt</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+          <div><div class="small text-muted">Current level</div><div class="fw-bold fs-4" id="receiptLevel">Level 1</div><div class="text-muted" id="receiptLevelName">Waste Rookie</div></div>
+          <img id="receiptQr" src="" alt="Receipt QR code" width="132" height="132" class="border p-1 bg-white">
+        </div>
+        <div class="receipt-grid">
+          <div class="receipt-stat"><div class="k">Votes today</div><div class="v" id="receiptVotes">0</div></div>
+          <div class="receipt-stat"><div class="k">Correct votes</div><div class="v" id="receiptCorrect">0</div></div>
+          <div class="receipt-stat"><div class="k">XP</div><div class="v" id="receiptXP">0</div></div>
+          <div class="receipt-stat"><div class="k">Waste sorted</div><div class="v" id="receiptKg">0.00 kg</div></div>
+        </div>
+        <div class="small text-muted mt-3">QR content is reserved for future rewards and free goods.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="architectureModal" tabindex="-1" aria-labelledby="architectureTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5" id="architectureTitle"><i class="fa-solid fa-circle-info me-2"></i>Project architecture & pitch</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+    <p class="section-note mb-3">The live path is simple: the Arduino triggers a capture, the PC runs the trained model, Flask exposes the state to this page, and the Arduino receives the routing command.</p>
+    <div class="architecture"><div class="arch-box"><i class="fa-solid fa-microchip fa-2x mb-2 text-success"></i><strong>Arduino Uno R3</strong><small class="d-block text-muted">CAPTURE + sensors</small></div><div class="arch-arrow">→</div><div class="arch-box"><i class="fa-solid fa-camera fa-2x mb-2 text-secondary"></i><strong>Webcam</strong><small class="d-block text-muted">Live frame</small></div><div class="arch-arrow">→</div><div class="arch-box"><i class="fa-solid fa-brain fa-2x mb-2 text-success"></i><strong>eco_sort_model.keras</strong><small class="d-block text-muted">Class probabilities</small></div></div>
+    <div class="architecture mt-2"><div></div><div class="arch-arrow">↘</div><div class="arch-box"><i class="fa-solid fa-server fa-2x mb-2 text-success"></i><strong>Flask API</strong><small class="d-block text-muted">Telemetry + photos</small></div><div class="arch-arrow">↗</div><div class="arch-box"><i class="fa-solid fa-gauge-high fa-2x mb-2 text-success"></i><strong>Dashboard</strong><small class="d-block text-muted">Judge-facing proof</small></div></div>
+    <hr><div class="small text-muted">Employee corrections are saved to local photo folders. “Submit for Retraining” moves an edge case into the retraining dataset so future model updates can use real corrections.</div>
+  </div></div></div>
+</div>
+
+<div id="toast" class="position-fixed bottom-0 end-0 p-3" style="z-index:1080"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const API_BASE='http://127.0.0.1:5000/api';
+const CATEGORY_WEIGHTS={recycle:0.05,compost:0.18,trash:0.12,manual:0};
+let stats={recycle:0,compost:0,trash:0,manual:0,total_kg:0};
+let currentMode='admin', employeeQueue=[], recentScans=[];
+let citizen={votes:0,correct:0,xp:0,level:1,streak:0,dayKey:'',itemIndex:0};
+const citizenItems=[{name:'Rinsed drink bottle',note:'Empty plastic bottle',icon:'fa-bottle-water',answer:'recycle'},{name:'Apple core',note:'Food scrap',icon:'fa-apple-whole',answer:'compost'},{name:'Greasy wrapper',note:'Food-contaminated wrapper',icon:'fa-box-open',answer:'trash'},{name:'Small battery',note:'Household battery',icon:'fa-battery-quarter',answer:'manual'},{name:'Cardboard box',note:'Clean cardboard',icon:'fa-box',answer:'recycle'},{name:'Coffee grounds',note:'Food/organic waste',icon:'fa-mug-hot',answer:'compost'}];
+function el(id){return document.getElementById(id)}
+function showToast(msg){const t=el('toast');t.innerHTML='<div class="alert alert-dark py-2 mb-0 shadow-sm">'+msg+'</div>';setTimeout(()=>t.innerHTML='',2200)}
+function setBackend(online){el('backendStatusText').textContent=online?'Backend online':'Backend offline';el('backendStatus').classList.toggle('status-offline',!online)}
+function switchMode(){currentMode=el('modeSelect').value;document.body.className='mode-'+currentMode;document.querySelectorAll('.admin-only,.employee-only,.citizen-only').forEach(n=>n.classList.add('hide'));document.querySelectorAll('.'+currentMode+'-only').forEach(n=>n.classList.remove('hide'));el('receiptButton').classList.toggle('hide',currentMode!=='citizen');const d={admin:'Operations view with live hardware, model and routing telemetry.',employee:'Floor view. Manual scans become photo cards here.',citizen:'Community view. Vote, earn XP, unlock achievements, and keep a receipt.'};el('modeDescription').textContent=d[currentMode];if(currentMode==='citizen'){loadCitizenState()}if(currentMode==='employee'){fetchQueue()}}
+async function fetchStats(){try{const r=await fetch(API_BASE+'/stats');if(!r.ok)throw 0;stats=await r.json();stats.recycle=Number(stats.recycle||0);stats.compost=Number(stats.organic||0);stats.trash=Number(stats.trash||0);stats.manual=Number(stats.manual||0);setBackend(true);updateDashboard()}catch(e){setBackend(false)}}
+async function fetchQueue(){try{const r=await fetch(API_BASE+'/manual-queue');if(!r.ok)throw 0;employeeQueue=await r.json();setBackend(true);renderEmployeeQueue()}catch(e){renderEmployeeQueue()}}
+async function fetchLogs(){try{const r=await fetch(API_BASE+'/recent-scans');if(!r.ok)throw 0;recentScans=await r.json();renderLogs()}catch(e){}}
+async function fetchTelemetry(){try{const started=performance.now();const r=await fetch(API_BASE+'/telemetry',{cache:'no-store'});const rtt=performance.now()-started;if(!r.ok)throw 0;const d=await r.json();renderTelemetry(d,rtt)}catch(e){} }
+async function fetchHealth(){try{const r=await fetch(API_BASE+'/health',{cache:'no-store'});if(!r.ok)throw 0;const d=await r.json();el('serialHealth').textContent=d.serial_connected?(d.port||'Arduino connected'):'Demo / no Arduino';el('serialSub').textContent=d.serial_connected?`${d.baud} baud`:'Keyboard + simulation mode available';el('cameraHealth').textContent=d.camera_ready?'Live':'Offline';el('cameraSub').textContent=`${Number(d.camera_fps||0).toFixed(1)} FPS`;el('inferenceHealth').textContent=`Inference ${Number(d.latency_ms||0).toFixed(1)} ms`;if(el('demoToggle'))el('demoToggle').checked=!!d.demo_mode;el('thresholdSlider').value=d.threshold;el('thresholdBig').textContent=Number(d.threshold).toFixed(0)+'%';el('thresholdText').textContent=Number(d.threshold).toFixed(0)+'%'}catch(e){}}
+async function fetchAll(){await Promise.all([fetchStats(),fetchQueue(),fetchLogs(),fetchTelemetry(),fetchHealth()]);}
+async function resetBackend(){if(!confirm('Reset live counts and pending manual items?'))return;try{const r=await fetch(API_BASE+'/reset',{method:'POST'});if(!r.ok)throw 0;employeeQueue=[];recentScans=[];await fetchAll();showToast('Counts reset')}catch(e){showToast('Could not reset the local backend')}}
+function updateDashboard(){const total=stats.recycle+stats.compost+stats.trash+stats.manual;['recycle','compost','trash','manual'].forEach(c=>{const C=c[0].toUpperCase()+c.slice(1);el('cnt'+C).textContent=stats[c]||0;el('pct'+C).textContent=total?((stats[c]||0)/total*100).toFixed(0)+'% of all scans':'0% of all scans';const pct=total?(stats[c]||0)/total*100:0;el('mix'+C).style.width=pct+'%';el('mix'+C+'Pct').textContent=pct.toFixed(0)+'%'});const kg=Number(stats.total_kg)||estimateKg(stats);el('kgTotal').textContent=kg.toFixed(2)+' kg';el('mixTotal').textContent=total+' items';el('impactKg').textContent=kg.toFixed(2)+' kg';el('co2Estimate').textContent=(kg*.5).toFixed(2)+' kg';el('landfillEstimate').textContent=(kg*.0015).toFixed(3)+' m³';el('treeEstimate').textContent=(kg*.02).toFixed(2)+' trees'}
+function estimateKg(s){return(s.recycle||0)*CATEGORY_WEIGHTS.recycle+(s.compost||0)*CATEGORY_WEIGHTS.compost+(s.trash||0)*CATEGORY_WEIGHTS.trash}
+function renderEmployeeQueue(){el('manualQueueCount').textContent=employeeQueue.length+' waiting';el('employeeEmpty').classList.toggle('hide',employeeQueue.length>0);const c=el('employeeQueue');c.innerHTML='';employeeQueue.forEach(q=>{const s=q.scores||{};const card=document.createElement('article');card.className='photo-card';card.innerHTML=`<div class="photo-wrap"><img src="${API_BASE}/photo/${encodeURIComponent(q.filename)}" alt="Manual scan ${q.id}" loading="lazy"></div><div class="photo-meta"><div class="photo-title">${escapeHtml(q.label)}</div><div class="photo-small">Scan #${q.id} · top confidence ${Number(q.confidence).toFixed(1)}%</div><div class="photo-small">Recycle ${Number(s.Recycle||0).toFixed(1)}% · Compost ${Number(s.Compost||0).toFixed(1)}% · Trash ${Number(s.Trash||0).toFixed(1)}%</div></div><div class="photo-actions"><button class="recycle" onclick="resolveManual(${q.id},'recycle')">Recycle</button><button class="compost" onclick="resolveManual(${q.id},'compost')">Compost</button><button class="trash" onclick="resolveManual(${q.id},'trash')">Trash</button><button class="manual" onclick="resolveManual(${q.id},'manual')">Special</button><button class="text-warning" onclick="submitRetraining(${q.id})">Retrain</button></div>`;c.appendChild(card)})}
+async function resolveManual(id,category){try{const r=await fetch(API_BASE+'/manual/resolve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,category})});if(!r.ok)throw 0;await fetchAll();showToast('Manual item sorted as '+category)}catch(e){showToast('Could not save that sort')}}
+async function submitRetraining(id){try{const r=await fetch(API_BASE+'/manual/retrain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});if(!r.ok)throw 0;await fetchAll();showToast('Photo submitted to the retraining dataset')}catch(e){showToast('Could not submit retraining photo')}}
+function renderLogs(){const b=el('logTableBody');b.innerHTML='';if(!recentScans.length){b.innerHTML='<tr><td colspan="5" class="text-center text-muted py-4">No scans yet.</td></tr>';return}recentScans.slice(0,12).forEach(r=>{const s=r.scores||{};const breakdown=`R ${Number(s.Recycle||0).toFixed(1)}% · C ${Number(s.Compost||0).toFixed(1)}% · T ${Number(s.Trash||0).toFixed(1)}%`;const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(r.time)}</td><td>${escapeHtml(r.item)}</td><td>${escapeHtml(r.tag)}</td><td title="${breakdown}">${Number(r.confidence).toFixed(1)}%</td><td>${escapeHtml(r.status)}<div class="small text-muted">${breakdown}</div></td>`;b.appendChild(tr)})}
+function renderTelemetry(d,rtt){const p=d.live_prediction||d.prediction||{};const capture=d.capture||{};el('captureStatus').textContent=`Capture ${capture.state||'idle'}${capture.scan_id?` · #${capture.scan_id}`:''}${capture.error?` · ${capture.error}`:''}`;el('latencyHealth').textContent=(Number(d.inference_ms||0)).toFixed(1)+' ms';el('latencySub').textContent='API RTT '+rtt.toFixed(0)+' ms';el('servoState').textContent=d.servo_state||'Idle';el('predictionLabel').textContent=p.label||'--';el('predictionCommand').textContent=p.command||'U';el('confidenceText').textContent=Number(p.confidence||0).toFixed(1)+'%';el('inferenceText').textContent=Number(p.inference_ms||d.inference_ms||0).toFixed(1)+' ms';el('thresholdText').textContent=Number(d.threshold||70).toFixed(0)+'%';el('thresholdBig').textContent=Number(d.threshold||70).toFixed(0)+'%';const list=el('probabilityList');list.innerHTML='';const scores=p.scores||{};['Recycle','Trash','Compost'].sort((a,b)=>(scores[b]||0)-(scores[a]||0)).forEach(name=>{const v=Number(scores[name]||0);const row=document.createElement('div');row.className='prob-row';row.innerHTML=`<span>${name}</span><div class="prob-track"><div class="prob-fill" style="width:${v}%"></div></div><strong>${v.toFixed(1)}%</strong>`;list.appendChild(row)});const t=el('telemetryTerminal');t.innerHTML=(d.serial_log||[]).map(x=>`<div class="telemetry-line"><span class="time">${escapeHtml(x.time)}</span> ${escapeHtml(x.text)}</div>`).join('')||'<div class="text-muted">No serial messages yet.</div>';const fills=d.bin_fill||{};['Organic','Recycle','Trash','Manual'].forEach(name=>{const key=name.toLowerCase();const v=fills[key];el('fill'+name).textContent=v==null?'--%':Number(v).toFixed(0)+'%';el('gauge'+name).style.height=v==null?'0%':Math.max(2,Math.min(100,Number(v)))+'%'});}
+let thresholdTimer;
+function setThresholdFromUI(v){el('thresholdBig').textContent=v+'%';clearTimeout(thresholdTimer);thresholdTimer=setTimeout(async()=>{try{const r=await fetch(API_BASE+'/settings/threshold',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({threshold:Number(v)})});if(r.ok){const d=await r.json();el('thresholdText').textContent=Number(d.threshold).toFixed(0)+'%'}}catch(e){}},120)}
+async function dashboardCapture(){try{const r=await fetch(API_BASE+'/capture',{method:'POST'});const d=await r.json();if(!r.ok){showToast(d.error||'Live result is not ready yet');return}showToast('Live result captured');setTimeout(fetchAll,300);}catch(e){showToast('Could not reach the local scanner')}}
+async function toggleDemo(){const enabled=el('demoToggle').checked;try{const r=await fetch(API_BASE+'/demo/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled})});if(!r.ok)throw 0;showToast(enabled?'Simulation mode enabled':'Simulation mode disabled')}catch(e){el('demoToggle').checked=!enabled;showToast('Could not change simulation mode')}}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function todayKey(){return new Date().toISOString().slice(0,10)}
+function loadCitizenState(){const key='ecosort_citizen_'+todayKey();const saved=JSON.parse(localStorage.getItem(key)||'null');citizen=saved||{votes:0,correct:0,xp:0,level:1,streak:0,dayKey:key,itemIndex:0};citizen.dayKey=key;renderCitizen();loadCitizenItem()}
+function saveCitizenState(){localStorage.setItem('ecosort_citizen_'+citizen.dayKey,JSON.stringify(citizen))}
+function loadCitizenItem(){const item=citizenItems[citizen.itemIndex%citizenItems.length];el('voteItemName').textContent=item.name;el('voteItemNote').textContent=item.note;el('voteIcon').className='fa-solid '+item.icon+' d-block';el('voteCount').textContent=citizen.votes+' votes today';el('voteHint').textContent='Choose a category.';document.querySelectorAll('.vote-buttons button').forEach(b=>b.disabled=false)}
+function castVote(category){if(citizen.votes>=10){showToast('Daily vote limit reached');return}const item=citizenItems[citizen.itemIndex%citizenItems.length],correct=category===item.answer;citizen.votes++;if(correct){citizen.correct++;citizen.streak++;citizen.xp+=25+Math.min(citizen.streak*3,15)}else{citizen.streak=0;citizen.xp+=10}while(citizen.xp>=citizen.level*100)citizen.level++;citizen.itemIndex=(citizen.itemIndex+1)%citizenItems.length;saveCitizenState();renderCitizen();el('voteHint').textContent=correct?'Correct. +XP':'Vote recorded. Keep sorting.';document.querySelectorAll('.vote-buttons button').forEach(b=>b.disabled=true);setTimeout(loadCitizenItem,800)}
+function levelName(level){if(level>=5)return'Planet Guardian';if(level>=4)return'Eco Warrior';if(level>=3)return'Sorting Apprentice';if(level>=2)return'Waste Recycler';return'Waste Rookie'}
+function renderCitizen(){const base=(citizen.level-1)*100,into=citizen.xp-base,pct=Math.min(100,Math.max(0,into));el('levelTitle').textContent=citizen.level;el('levelName').textContent=levelName(citizen.level);el('xpText').textContent=citizen.xp+' XP';el('xpGoal').textContent=Math.min(into,100)+' / 100';el('xpFill').style.width=pct+'%';el('voteCount').textContent=citizen.votes+' votes today';const kg=Number(stats.total_kg)||estimateKg(stats);setAchievement('achievementVotes',citizen.votes>=5);setAchievement('achievementCorrect',citizen.correct>=10);setAchievement('achievementLevel',citizen.level>=3);setAchievement('achievementWaste',kg>=10)}
+function setAchievement(id,on){el(id).classList.toggle('unlocked',on)}
+function generateReceipt(){const kg=(Number(stats.total_kg)||estimateKg(stats)).toFixed(2);el('receiptLevel').textContent='Level '+citizen.level;el('receiptLevelName').textContent=levelName(citizen.level);el('receiptVotes').textContent=citizen.votes;el('receiptCorrect').textContent=citizen.correct;el('receiptXP').textContent=citizen.xp;el('receiptKg').textContent=kg+' kg';const payload=`EcoSort|level=${citizen.level}|xp=${citizen.xp}|votes=${citizen.votes}|kg=${kg}`;el('receiptQr').src='https://api.qrserver.com/v1/create-qr-code/?size=132x132&data='+encodeURIComponent(payload)}
+setInterval(()=>{fetchStats();fetchTelemetry();fetchHealth();if(currentMode==='employee')fetchQueue();fetchLogs();if(currentMode==='citizen')renderCitizen()},2000);
+window.addEventListener('load',()=>{const feed=el('cameraFeed');if(feed)feed.src=API_BASE+'/mjpeg?ts='+Date.now();switchMode();fetchAll()});
+</script>
 </body>
 </html>
